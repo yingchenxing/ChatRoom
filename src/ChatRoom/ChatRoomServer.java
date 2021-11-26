@@ -122,13 +122,13 @@ public class ChatRoomServer extends JFrame {
         isOnline = true;
 
         //可以接受多个客户端的连接
-try {
-    while (isOnline) {
-        s = socket.accept();
-        connectionList.add(new ClientConnection(s));
-        onlineTa.setText(connectionList.size()+"");
-    }
-} catch (SocketException e) {
+        try {
+            while (isOnline) {
+                s = socket.accept();
+                connectionList.add(new ClientConnection(s));
+                onlineTa.setText(connectionList.size() + "");
+            }
+        } catch (SocketException e) {
             System.out.println("服务器中断！");
         } catch (IOException e) {
             System.out.println("发生读写错误！");
@@ -148,52 +148,49 @@ try {
         //同时接受客户端信息
 
         @Override
-public void run() {
-    DataInputStream dis = null;
-    try {
-        dis = new DataInputStream(s.getInputStream());
+        public void run() {
+            DataInputStream dis = null;
+            try {
+                dis = new DataInputStream(s.getInputStream());
 
-        //用于持续接受信息
-        while (isOnline) {
-            String str = dis.readUTF();
-            System.out.println(str);
-            if (name == null) {
-                if (str.contains(":"))
-                    name = str.split(":", 2)[0];
-                else
-                    name = str.split("进", 2)[0];
+                //用于持续接受信息
+                while (isOnline) {
+                    String str = dis.readUTF();
+                    System.out.println(str);
+                    if (name == null) {
+                        name = str.substring(0, str.length() - 7);
+                    }
+                    serverTa.append(str + "\n");
+
+                    //遍历list来调用send方法
+                    Iterator<ClientConnection> it = connectionList.iterator();
+                    while (it.hasNext()) {
+                        ClientConnection out = it.next();
+                        out.send(str);
+                    }
+                }
+            } catch (SocketException e) {
+                if (name == null) {
+                    System.out.println("一个客户端下线了");
+                    serverTa.append(s.getInetAddress() + "|" + s.getPort() + "客户端下线了\n");
+                } else {
+                    System.out.println(name + "下线了");
+                    serverTa.append(name + "下线了\n");
+                }
+
+                Iterator<ClientConnection> it = connectionList.iterator();
+                while (it.hasNext()) {
+                    ClientConnection out = it.next();
+                    out.send(name + "下线了！");
+                }
+                //从list中移除s
+                connectionList.remove(this);
+                onlineTa.setText(connectionList.size() + "");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            serverTa.append(str + "\n");
 
-            //遍历list来调用send方法
-            Iterator<ClientConnection> it = connectionList.iterator();
-            while (it.hasNext()) {
-                ClientConnection out = it.next();
-                out.send(str);
-            }
         }
-    } catch (SocketException e) {
-        if (name == null) {
-            System.out.println("一个客户端下线了");
-            serverTa.append(s.getInetAddress() + "|" + s.getPort() + "客户端下线了\n");
-        } else {
-            System.out.println(name + "下线了");
-            serverTa.append(name + "下线了\n");
-        }
-
-        Iterator<ClientConnection> it = connectionList.iterator();
-        while (it.hasNext()) {
-            ClientConnection out = it.next();
-            out.send(name + "下线了！");
-        }
-        //从list中移除s
-        connectionList.remove(this);
-        onlineTa.setText(connectionList.size()+"");
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-
-}
 
         //每个类发送数据的方法
         public void send(String str) {
@@ -225,7 +222,7 @@ public void run() {
         labelPanel.add(portTa);
         labelPanel.add(onlineLabel);
         labelPanel.add(onlineTa);
-labelPanel.setBounds(0,0,500,200);
+        labelPanel.setBounds(0, 0, 500, 200);
 
         this.add(labelPanel, BorderLayout.NORTH);
         this.add(serverSp, BorderLayout.CENTER);

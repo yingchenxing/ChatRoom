@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -49,12 +50,18 @@ public class ChatRoomClient extends JFrame {
         ta.setEditable(false);
         tf.requestFocus();
 
-        //发送登录信息到服务器
+//发送登录信息到服务器
         try {
             socket = new Socket(connectionAddress, connectionPort);
             send(name + "进入了服务器！");
             isOnline = true;
 
+        } catch (ConnectException e) {
+            System.out.println("连接失败，服务器不在线或地址填写错误！");
+            ta.append("连接失败，服务器不在线！");
+        } catch (SocketException e) {
+            System.out.println("连接失败，地址错误！");
+            ta.append("连接失败，地址错误！");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -70,7 +77,7 @@ public class ChatRoomClient extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NullPointerException e) {
-            ta.append("服务器未连接，发送失败！\n");
+            ta.append("服务器未连接，请检查服务器是否开启！\n");
         }
     }
 
@@ -134,7 +141,13 @@ public class ChatRoomClient extends JFrame {
 
                 if (!addressText.getText().isEmpty()) {
                     connectionAddress = addressText.getText().split(":", 2)[0];
-                    connectionPort = Integer.parseInt(addressText.getText().split(":", 2)[1]);
+                    try {
+                        connectionPort = Integer.parseInt(addressText.getText().split(":", 2)[1]);
+                    } catch (ArrayIndexOutOfBoundsException e1) {
+                        System.out.println("输入格式错误，请重新输入！");
+//                        JTextArea wrong = new JTextArea("输入格式错误，请重新输入！");
+//                        frame.add(wrong);
+                    }
                 }
                 System.out.println(connectionAddress + ":" + connectionPort);
                 frame.setVisible(false);
